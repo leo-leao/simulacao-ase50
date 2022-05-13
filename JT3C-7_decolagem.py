@@ -6,34 +6,40 @@ from functions import Functions as func
 table_a22 = pd.read_excel("table_a22.xlsx")
 # Decolagem muda temperatura, pressao, velocidade 
 # Enpuxo, consumo de combustivel, consumo especifico, eficiencia
+# Menor empuxo -> menos peso é capaz de carregar
 def simulacao(table_a22, a, b, c, d, e):
     # Parâmetros da turbina JT3C-7
     m_ar_iso = 81.65                                            # [kg/s]
     pr = 12.5
     impulso_max = 53500                                     # [N]
-    impulso_cruzeiro = 15800                                # [N]
 
     """Consumo específico de combustível"""
     cce_decolagem = 22.2                                    # [g/kN/s]
-    cce_cruzeiro = 25.7                                     # [g/kN/s]
 
     """Consumo de combustível"""
     cc_decolagem = (cce_decolagem * impulso_max)/1000       # [g/s]
-    cc_cruzeiro = (cce_cruzeiro * impulso_cruzeiro)/1000    # [g/s]
 
     """Caracteristicas ISO"""
     temp_iso = func.kelvin(15)                              # [K]
     p_iso = 101.325                                         # [kPa]
-    R_ar_iso = 8.314/28.96                                        # [kJ/kg*°C]
+    R_ar_iso = 8.314/28.96                                  # [kJ/kg*°C]
     v_iso = temp_iso*R_ar_iso/p_iso  
-    
-    # Avião a jato voando a 260m/s e 9000 metros de altitude
-    v_in = 260
-    T_amb = func.kelvin(-43.15)
-    p_amb = 31.2
+
+    # Avião decolando em condições iso e velocidade 70m/s
+    v_in = 70                                              # [m/s]
+    T_amb = temp_iso
+    p_amb = 102.2
     inter = func.getValues(table_a22, "T", T_amb)
     h_amb = inter["h"].values[0]  
     pr_amb = inter["pr"].values[0]
+
+    # Cidade do méxico em dia de verão
+    # v_in = 70                                              # [m/s]
+    # T_amb = func.kelvin(26)
+    # p_amb = p_iso
+    # inter = func.getValues(table_a22, "T", T_amb)
+    # h_amb = inter["h"].values[0]  
+    # pr_amb = inter["pr"].values[0]
 
     """Dados"""
     pr_comp = 12.5
@@ -78,17 +84,14 @@ def simulacao(table_a22, a, b, c, d, e):
     #print("Estado 3:", T_3, pr_3, p_3, h_3)
 
     """Resultados parciais"""
-    m_comb_1 = (m_ar_in * (h_3 - h_2))/(PCI - h_3)          # [kg/s]
-    m_comb_2 = m_comb_1 * 3600                              # [kg/h]
-    W_comp_1 = m_ar_in*(h_2 - h_1)                          # [kW]
-    W_comp_2 = W_comp_1/m_ar_in                             # [kW/kg]
-    W_exps_1 = W_comp_1                                     # [kW]
-    W_exps_2 = W_comp_1/(m_ar_in + m_comb_1)                # [kW/kg]
+    m_comb = (m_ar_in * (h_3 - h_2))/(PCI - h_3)          # [kg/s]
+    W_comp = m_ar_in*(h_2 - h_1)                          # [kW]
+    W_exps = W_comp                                       # [kW]
 
     #print("Resultados parciais:", m_comb_1, W_comp_1, W_exps_1)
 
     # Estado 4s:
-    h_4s = h_3 - (W_exps_1/((m_ar_in + m_comb_1)*n_exps))
+    h_4s = h_3 - (W_exps/((m_ar_in + m_comb)*n_exps))
     inter = func.getValues(table_a22, "h", h_4s)
     T_4s = inter["T"].values[0]
     pr_4s = inter["pr"].values[0]
@@ -115,43 +118,18 @@ def simulacao(table_a22, a, b, c, d, e):
 
     """Resultados finais"""
     v_exaustao = (2*(h_4 - h_5)*1000)**0.5
-    f_empuxo = (m_ar_in + m_comb_1)*v_exaustao - m_ar_in*v_in
-    impulso_especifico_1 = f_empuxo/m_ar_in                # [N/kg/s_ar]   
-    impulso_especifico_2 = impulso_especifico_1/101.973    # [g/kN/s]
-    cce_cruzeiro_sim = (m_comb_1*1000)/(f_empuxo/1000)
+    f_empuxo = (m_ar_in + m_comb)*v_exaustao - m_ar_in*v_in
+    impulso_especifico = f_empuxo/m_ar_in                # [N/kg/s_ar]
+    cce_decolagem_sim = (m_comb*1000)/(f_empuxo/1000)
     n_propulsiva = 2/(1+(v_exaustao/v_in))
 
-    headers = ["", "Consumo", "Consumo específico", "Impulso"]
-    l = [["Fabricante", cc_cruzeiro/1000, cce_cruzeiro, impulso_cruzeiro], 
-        ["Simulação", m_comb_1, cce_cruzeiro_sim, f_empuxo]]
-    l.append(["Desvio", (l[1][1]-l[0][1])*100/l[0][1], (l[1][2]-l[0][2])*100/l[0][2], (l[1][3]-l[0][3])*100/l[0][3]])
-    table = tabulate(l, headers=headers, tablefmt='orgtbl')
-    print(table)
-
-    print("\nEficiência propulsiva:", n_propulsiva)
-
-    return l[-1]
+    return f_empuxo, m_comb, cce_decolagem_sim, n_propulsiva
 
 
 pdc, ec, ee = 2.1, 0.869, 0.854
-#pdc, ec, ee = 2.5, 0.87, 0.87
-simulacao(table_a22, pdc, 0, ec, ee, 0)
+empuxo, consumo, cce, eficiencia = simulacao(table_a22, pdc, 0, ec, ee, 0)
 
-"""
-Encontrar melhores valores:
-
-menor = 10e8
-for perda_de_carga in [2.5]:
-    for eficiencia_compressor in np.linspace(0.85, 0.90, 51):
-        for eficiencia_expansor in np.linspace(0.85, 0.90, 51):
-            sim = simulacao(table_a22, perda_de_carga, 0, eficiencia_compressor, eficiencia_expansor, 0)
-            soma = sum(np.abs(sim[1:]))
-            if soma < menor:
-                pdc, ec, ee = perda_de_carga, eficiencia_compressor, eficiencia_expansor
-                menor = soma
-                print(soma)
-            if soma < 0.05:
-                print(pdc, ec, ee)
-"""
-
-
+headers = ["Empuxo", "Consumo", "Consumo específico", "Eficiência"]
+l = [[empuxo, consumo, cce, eficiencia]]
+table = tabulate(l, headers=headers, tablefmt='orgtbl')
+print(table)

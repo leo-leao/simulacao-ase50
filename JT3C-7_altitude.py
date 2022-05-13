@@ -6,34 +6,30 @@ from functions import Functions as func
 table_a22 = pd.read_excel("table_a22.xlsx")
 # Decolagem muda temperatura, pressao, velocidade 
 # Enpuxo, consumo de combustivel, consumo especifico, eficiencia
-def simulacao(table_a22, a, b, c, d, e):
+def simulacao(table_a22, a, c, d):
+
     # Parâmetros da turbina JT3C-7
     m_ar_iso = 81.65                                            # [kg/s]
-    pr = 12.5
-    impulso_max = 53500                                     # [N]
     impulso_cruzeiro = 15800                                # [N]
 
     """Consumo específico de combustível"""
-    cce_decolagem = 22.2                                    # [g/kN/s]
     cce_cruzeiro = 25.7                                     # [g/kN/s]
-
-    """Consumo de combustível"""
-    cc_decolagem = (cce_decolagem * impulso_max)/1000       # [g/s]
     cc_cruzeiro = (cce_cruzeiro * impulso_cruzeiro)/1000    # [g/s]
 
     """Caracteristicas ISO"""
     temp_iso = func.kelvin(15)                              # [K]
     p_iso = 101.325                                         # [kPa]
-    R_ar_iso = 8.314/28.96                                        # [kJ/kg*°C]
+    R_ar_iso = 8.314/28.96                                  # [kJ/kg*°C]
     v_iso = temp_iso*R_ar_iso/p_iso  
-    
-    # Avião a jato voando a 260m/s e 9000 metros de altitude
-    v_in = 260
-    T_amb = func.kelvin(-43.15)
-    p_amb = 31.2
+
+    # Avião a jato voando a 260m/s e 7000 metros de altitude
+    v_in = 260                                              # [m/s]
+    T_amb = func.kelvin(-29.7915)
+    p_amb = 41.6948
     inter = func.getValues(table_a22, "T", T_amb)
     h_amb = inter["h"].values[0]  
     pr_amb = inter["pr"].values[0]
+
 
     """Dados"""
     pr_comp = 12.5
@@ -132,26 +128,5 @@ def simulacao(table_a22, a, b, c, d, e):
 
     return l[-1]
 
-
 pdc, ec, ee = 2.1, 0.869, 0.854
-#pdc, ec, ee = 2.5, 0.87, 0.87
-simulacao(table_a22, pdc, 0, ec, ee, 0)
-
-"""
-Encontrar melhores valores:
-
-menor = 10e8
-for perda_de_carga in [2.5]:
-    for eficiencia_compressor in np.linspace(0.85, 0.90, 51):
-        for eficiencia_expansor in np.linspace(0.85, 0.90, 51):
-            sim = simulacao(table_a22, perda_de_carga, 0, eficiencia_compressor, eficiencia_expansor, 0)
-            soma = sum(np.abs(sim[1:]))
-            if soma < menor:
-                pdc, ec, ee = perda_de_carga, eficiencia_compressor, eficiencia_expansor
-                menor = soma
-                print(soma)
-            if soma < 0.05:
-                print(pdc, ec, ee)
-"""
-
-
+simulacao(table_a22, pdc, ec, ee)
