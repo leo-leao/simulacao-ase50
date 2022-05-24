@@ -35,6 +35,7 @@ def simulacao(table_a22, a, b, c, d, e):
     pci_gas_natural = 50010                 # [kJ/kg]
     relacao_pressao_compressao = 10.7
 
+    # P * v = r t =>  P/d = r*t  => d = P/(r*T(t))
     # Dados variaveis
     perda_carga_combustao = a               # [%]
     temperatura_maxima = kelvin(b)       # [K]

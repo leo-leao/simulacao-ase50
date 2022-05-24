@@ -123,20 +123,12 @@ def simulacao(table_a22, a, b, c, d, e):
     cce_decolagem_sim = (m_comb*1000)/(f_empuxo/1000)
     n_propulsiva = 2/(1+(v_exaustao/v_in))
 
-    return abs(f_empuxo-53500), abs(m_comb-1.188), abs(cce_decolagem_sim-22.2), n_propulsiva
+    return f_empuxo, m_comb, cce_decolagem_sim, n_propulsiva
 
-
-menorDesvio = 10e3
 pdc, ec, ee = 2.1, 0.869, 0.854
-for i in np.arange(910, 1000, 0.01):
-    for j in np.arange(45, 60, 1):
-        empuxo, consumo, cce, eficiencia = simulacao(table_a22, pdc, i, ec, ee, j)
-        if menorDesvio > abs(empuxo + consumo + cce):
-            menorDesvio = abs(empuxo + consumo + cce)
-            print(i, j, menorDesvio)
-
-empuxo, consumo, cce, eficiencia = simulacao(table_a22, pdc, 912.08, ec, ee, 0)
+empuxo, consumo, cce, eficiencia = simulacao(table_a22, pdc, 912.08, ec, ee, 51)
 headers = ["Empuxo", "Consumo", "Consumo específico", "Eficiência"]
 l = [[empuxo, consumo, cce, eficiencia]]
 table = tabulate(l, headers=headers, tablefmt='orgtbl')
+print(abs(l[0][0]-53500)*100/53500 + abs(l[0][1]-1.188)*100/1.188 + abs(l[0][2]-22.2)*100/22.2)
 print(table)

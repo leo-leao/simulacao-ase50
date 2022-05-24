@@ -70,9 +70,9 @@ def simulacao(table_a22, a, b, c, d, e):
 
     # Estado 3:
     p_3 = p_2*(1 - delta_p)
-    h_3 = 1123                                              # [kJ/kg]
-    inter = func.getValues(table_a22, "h", h_3)
-    T_3 = inter["T"].values[0]
+    T_3 = b
+    inter = func.getValues(table_a22, "T", T_3)
+    h_3 = inter["h"].values[0]
     pr_3 = inter["pr"].values[0]
 
     #print("Estado 3:", T_3, pr_3, p_3, h_3)
@@ -130,12 +130,13 @@ def simulacao(table_a22, a, b, c, d, e):
 
     print("\nEficiência propulsiva:", n_propulsiva)
 
-    return l[-1]
+    return l[-1][1:]
 
 
-pdc, ec, ee = 2.1, 0.869, 0.854
-#pdc, ec, ee = 2.5, 0.87, 0.87
-simulacao(table_a22, pdc, 0, ec, ee, 0)
+pdc, ec, ee, temp = 2.1, 0.869, 0.854, 1067.069
+desvios = simulacao(table_a22, pdc, temp, ec, ee, 0)
+print(sum(np.abs(desvios)))
+print(func.celsius(temp))
 
 """
 Encontrar melhores valores:
